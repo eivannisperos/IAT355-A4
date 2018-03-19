@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>A4</title>
+    <script src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+    <script src="data/vancouver_elem.json"></script>
+  </head>
+
+  <body>
+
+    <script>
+      var width = 700;
+      var height = 580;
+
+      //create SVG
+      //set width, height of the map
+      var svg = d3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+      //create a variable in which the SVG will be mounted on
+      //in this case, its the variable g
+      //this will containt the geometry elements
+      var g = svg.append("g");
+
+      //projection
+      var albersProjection = d3.geoAlbers()
+        .scale( 100 )
+        .rotate( [0,0] )
+        .center( [0, 0] )
+        .translate( [width/2,height/2] );
+
+      var geoPath = d3.geoPath()
+        .projection( albersProjection );
+
+      g.selectAll("path")
+        .data( ex.features )
+        .enter()
+        .append("path")
+        .attr("fill", "ccc")
+        .attr("stroke", "#333")
+        .attr("d", geoPath);
+    </script>
+
+  </body>
+
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css"
+      integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
+      crossorigin=""/>
+
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
+      integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
+      crossorigin=""></script>
+
+    <link rel="stylesheet" href="css/main.css">
+  </head>
+
+  <body>
+    <div id="mapid"></div>
+
+    <script>
+      var mymap = L.map('mapid').setView( [51.505, -0.09], 13);
+
+      //adding a marker
+      var marker = L.marker([51.5, -0.09]).addTo(mymap);
+
+      //adding a red circle as a marker
+      var circle = L.circle([51.508, -0.11], { //coords - where is the marker going?
+        color: 'red', //attributes of the circle ho here
+        fillColor: '#f03',
+        fillOpacity: 0.5,
+        radius: 500
+      }).addTo(mymap); //then lastly, you add to map
+
+      //adding a polygon
+      var polygon = L.polygon([
+        [51.509, -0.08], //coordinates of the polygon
+        [51.503, -0.06],
+        [51.51, -0.047]
+      ]).addTo(mymap);
+
+      //function that activiates when map is clicked on
+      function onMapClick(e) {
+        alert("You clicked the map at" + e.latlng);
+      }
+
+      //'on' action listener, listens to map for clicks on mapid
+      //onMapClick is the function that starts when map is clicked
+      mymap.on('click', onMapClick);
+
+      //binding a popup to a marker
+      //marker is the variable you want the popup to appear
+      marker.bindPopup("I am a popup.").openPopup();
+
+      //clicking on a marker will make the popup appear
+      circle.bindPopup("I am a circle.");
+
+      //
+
+
+      L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+          maxZoom: 18,
+          id: 'mapbox.streets',
+          accessToken: 'pk.eyJ1IjoiZWl2YW5uaXNwZXJvcyIsImEiOiJjamV4YTdnM2ExMHVoMndwY2N6ZGk2M3BsIn0.Ga6sMTa39-B_DchNNMKBwA'
+      }).addTo(mymap);
+
+      L.geoJSON(surrey).addTo(mymap);
+    </script>
+
+  </body>
+</html>
