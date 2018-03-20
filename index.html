@@ -18,7 +18,9 @@
     <!-- map goes here -->
     <div id="mapid"></div>
 
-    <script type="text/javascript" src="data/test.js"></script>
+    <script type="text/javascript" src="data/vancouver.js"></script>
+    <script type="text/javascript" src="data/surrey.js"></script>
+    <script type="text/javascript" src="data/richmond.js"></script>
     <script>
       var mymap = L.map('mapid').setView([49.2827, -123.1207], 11);
 
@@ -29,7 +31,9 @@
           accessToken: 'pk.eyJ1IjoiZWl2YW5uaXNwZXJvcyIsImEiOiJjamV4YTdnM2ExMHVoMndwY2N6ZGk2M3BsIn0.Ga6sMTa39-B_DchNNMKBwA'
       }).addTo(mymap);
 
-      L.geoJSON(vancElem).addTo(mymap);
+      L.geoJSON(vancNeighborhoods).addTo(mymap);
+      L.geoJSON(surreyNeighborhoods).addTo(mymap);
+      L.geoJSON(richmondNeigh).addTo(mymap);
     </script>
 
   </body>
