@@ -21,6 +21,7 @@
     <script type="text/javascript" src="data/vancouver.js"></script>
     <script type="text/javascript" src="data/surrey.js"></script>
     <script type="text/javascript" src="data/richmond.js"></script>
+    <script type="text/javascript" src="js/d3.js"></script>
     <script>
       var mymap = L.map('mapid').setView([49.2827, -123.1207], 11);
 
@@ -34,6 +35,38 @@
       L.geoJSON(vancNeighborhoods).addTo(mymap);
       L.geoJSON(surreyNeighborhoods).addTo(mymap);
       L.geoJSON(richmondNeigh).addTo(mymap);
+
+      L.svg().addTo(mymap);
+      var svg =  d3.select("#mapid").select("svg");
+      var g = svg.select("g").attr("class", "leaflet-zoom-hide");
+
+      d3.csv("data/vancouver_schools.csv", function(error, data) {
+        data.forEach(function (d) {
+            d.LatLng = new L.LatLng(d.LATITUDE, d.LONGITUDE);
+        })
+
+        var feature = g.selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("r", 5)
+            .attr("fill", "red")
+            .style("stroke", "black")
+
+        function update() {
+            feature.attr("cx", function (d) {
+              return mymap.latLngToLayerPoint(d.LatLng).x;
+            });
+
+            feature.attr("cy", function (d) {
+              return mymap.latLngToLayerPoint(d.LatLng).y;
+            });
+        }
+
+        mymap.on("viewreset", update);
+        mymap.on("zoomend", update);
+        update();
+      });
     </script>
 
   </body>
