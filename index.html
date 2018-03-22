@@ -23,9 +23,12 @@
     <script type="text/javascript" src="data/richmond.js"></script>
     <script type="text/javascript" src="js/d3.js"></script>
     <script>
-      var mymap = L.map('mapid').setView([49.2827, -123.1207], 11);
-      var color = d3.scaleQuantize()
-                  .range(['#fff7fb','#ece7f2','#d0d1e6','#a6bddb','#74a9cf','#3690c0','#0570b0','#034e7b']);
+      var mymap = L.map('mapid').setView([49.2827, -123.1207], 12.5);
+      var colorVacc = d3.scaleQuantize()
+        .range(['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666']);
+
+      //active listeners
+      var geojson;
 
       L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
           attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -34,98 +37,122 @@
           accessToken: 'pk.eyJ1IjoiZWl2YW5uaXNwZXJvcyIsImEiOiJjamV4YTdnM2ExMHVoMndwY2N6ZGk2M3BsIn0.Ga6sMTa39-B_DchNNMKBwA'
       }).addTo(mymap);
 
+      //reset highlight feature
+      function highlightFeature(e) {
+        var layer = e.target;
 
-      // function style(feature) {
-      //
-      //   color.domain([
-      //     	d3.min(feature, function(d) { return d.value; }),
-      //       d3.max(feature, function(d) { return d.value; })
-      //   ]);
-      //
-      //   d3.csv("data/med_avg_income_vanc.csv", function(income) {
-      //     for (var i = 0; i < )
-      //   });
-      //
-      //   return {
-      //     fillColor: color, //data needs to go in here
-      //     weight: 2,
-      //     opacity: 1,
-      //     color: 'white',
-      //     dashArray: '3',
-      //     fillOpactiy: 0.7
-      //   }
-      // }
-
-      d3.csv("data/us-ag-productivity.csv", function(data) {
-        //sets scale for color
-        color.domain([
-					d3.min(data, function(d) { return d.value; }),
-					d3.max(data, function(d) { return d.value; })
-				]);
-
-        d3.json(vancNeighborhoods, function(json) {
-          for (var i = 0; i < data.lenght; i++) {
-            //take name of neighborhood in JSON
-            var vancNeighName = data[i].state;
-            console.log(vancNeighName);
-
-            //avg income in CSV
-            var vancNeighAvgValue = parseFloat(data[i].avgIncome);
-
-            //find corresponding vnacouver neighborhood inside the GEOJSON
-            for (var j = 0; j < json.features.lenght; j++) {
-              var jsonVancName = json.features[j].properties.name;
-
-              //place it inside
-              if (vancNeighName == jsonVancName) {
-                json.features[j].properties.value = vancNeighAvgValue;
-                break;
-              }
-            }
-
-          }
-
-          function style(d) {
-            return {
-                fillColor: color(d.properties.value),
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '3',
-                fillOpacity: 0.7
-            };
-          }
-
-          L.geoJSON(vancNeighborhoods, {style: style}).addTo(mymap);
+        layer.setStyle({
+          weight: 5,
+          color: '#ccc',
+          dashArray: '',
+          fillOpactiy: 0.7
         });
+      }
 
+      //resets default style
+      function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+      }
+
+      //zooms
+      function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+      }
+
+      //add listeners
+      function onEachFeature(feature, layer) {
+        layer.on({
+          mouseover: highlightFeature,
+          mouseout: resetHighlight,
+          click: zoomToFeature
+        });
+      }
+
+      //handles vancouver chloropleth
+      d3.csv("data/med_avg_income_vanc.csv", function(data) {
+
+        for (var i = 0; i < data.length; i++) {
+          //take name of neighborhood in JSON
+          var vancNeighName = data[i].name;
+          //avg income in CSV
+          var vancNeighAvgValue = parseFloat(data[i].avgIncome);
+
+          //find corresponding vnacouver neighborhood inside the GEOJSON
+          for (var j = 0; j < vancNeighborhoods.features.length; j++) {
+            var jsonVancName = vancNeighborhoods.features[j].properties.name;
+
+            //place it inside
+            if (vancNeighName == jsonVancName) {
+              vancNeighborhoods.features[j].properties.value = vancNeighAvgValue;
+              break;
+            }
+          }
+
+        }
+
+        //median household income color scheme
+        function getColorMedHaus(d) {
+          return d > 70000  ? '#034e7b' :
+                 d > 60000  ? '#0570b0' :
+                 d > 50000  ? '#3690c0' :
+                 d > 40000  ? '#74a9cf' :
+                 d > 35000  ? '#a6bddb' :
+                 d > 30000  ? '#d0d1e6' :
+                           'white';
+        }
+
+        function style(vNeigh) {
+          return {
+              fillColor: getColorMedHaus(vNeigh.properties.value),
+              weight: 2,
+              opacity: 1,
+              color: 'white',
+              dashArray: '3',
+              fillOpacity: 0.7
+          };
+        }
+
+        geojson = L.geoJSON(vancNeighborhoods, {style: style, onEachFeature: onEachFeature}).addTo(mymap);
       });
 
 
       //layers
-      // L.geoJSON(vancNeighborhoods).addTo(mymap);
       L.geoJSON(surreyNeighborhoods).addTo(mymap);
-
-      L.svg().addTo(mymap);
-
-      //color
 
 
       var svg =  d3.select("#mapid").select("svg");
       var g = svg.select("g").attr("class", "leaflet-zoom-hide");
 
-      d3.csv("data/vancouver_schools.csv", function(error, data) {
+      d3.csv("data/vanc_full_data_elem.csv", function(error, data) {
         data.forEach(function (d) {
             d.LatLng = new L.LatLng(d.LATITUDE, d.LONGITUDE);
         })
+
+        function getColorVacc(d) {
+          return d > 90  ? '#fef0d9' :
+                 d > 85  ? '#fdd49e' :
+                 d > 80 ? '#fdbb84' :
+                 d > 70  ? '#fc8d59' :
+                 d > 60  ? '#e34a33' :
+                 d > 50  ? '#b30000' :
+                           'white';
+        }
 
         var feature = g.selectAll("circle")
             .data(data)
             .enter()
             .append("circle")
-            .attr("r", 5)
-            .attr("fill", "red")
-            .style("stroke", "black")
+            .attr("r", 7)
+            .style("fill", function(d) {
+              var value = parseFloat(d.MEASLES);
+
+              if (value) {
+                console.log(value);
+                return getColorVacc(value);
+              } else {
+                return "white";
+              }
+            })
 
         function update() {
             feature.attr("cx", function (d) {
