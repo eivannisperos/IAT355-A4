@@ -30,6 +30,9 @@
       //active listeners
       var geojson;
 
+      //information bar
+      var info = L.control({position: 'bottomleft'});
+
       L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
           attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
           maxZoom: 18,
@@ -47,19 +50,24 @@
           dashArray: '',
           fillOpactiy: 0.7
         });
+
+        //updates the info control with actual info
+        //in this case, this is median household income
+        info.update(layer.feature.properties);
       }
 
       //resets default style
       function resetHighlight(e) {
         geojson.resetStyle(e.target);
+        info.update();
       }
 
-      //zooms
+      //zooms to neighborhood when clicked
       function zoomToFeature(e) {
-        map.fitBounds(e.target.getBounds());
+        mymap.fitBounds(e.target.getBounds());
       }
 
-      //add listeners
+      //for each listener, add the action required
       function onEachFeature(feature, layer) {
         layer.on({
           mouseover: highlightFeature,
@@ -67,6 +75,22 @@
           click: zoomToFeature
         });
       }
+
+      //control (overlay showing data)
+
+      //creates a div with info as a class
+      info.onAdd = function(mymap) {
+        this._div = L.DomUtil.create('div', 'info'); //create a div with info as a class
+        this.update();
+        return this._div;
+      }
+
+      //puts the information inside the div
+      info.update = function(props) {
+        this._div.innerHTML = '<h3>Median Household Income</h3>' + (props ? '<b>' + props.name + '</b><br />' + props.value : 'Hover over a Neighborhood');
+      }
+
+      info.addTo(mymap);
 
       //handles vancouver chloropleth
       d3.csv("data/med_avg_income_vanc.csv", function(data) {
@@ -112,6 +136,7 @@
           };
         }
 
+        //for the geoJSON, add the JSON, the new stying, and the listeners to the layer
         geojson = L.geoJSON(vancNeighborhoods, {style: style, onEachFeature: onEachFeature}).addTo(mymap);
       });
 
