@@ -24,6 +24,9 @@
     <script type="text/javascript" src="js/d3.js"></script>
     <script>
       var mymap = L.map('mapid').setView([49.2827, -123.1207], 12.5);
+
+      //radius of circle
+      var radius = 7;
       var colorVacc = d3.scaleQuantize()
         .range(['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666']);
 
@@ -31,7 +34,12 @@
       var geojson;
 
       //information bar
-      var info = L.control({position: 'bottomleft'});
+      var info = L.control();
+
+      //legend
+      var legend = L.control({position: 'bottomright'});
+
+
 
       L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
           attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -87,7 +95,7 @@
 
       //puts the information inside the div
       info.update = function(props) {
-        this._div.innerHTML = '<h3>Median Household Income</h3>' + (props ? '<b>' + props.name + '</b><br />' + props.value : 'Hover over a Neighborhood');
+        this._div.innerHTML = '<h3>Median Household Income By Neighborhood</h3>' + (props ? '<b>' + props.name + '</b><br />' + "$" + " " + props.value : 'Hover over a Neighborhood');
       }
 
       info.addTo(mymap);
@@ -136,6 +144,24 @@
           };
         }
 
+        //add legend
+        legend.onAdd = function(mymap) {
+          //each div has a class with info and legend
+
+          var div = L.DomUtil.create('div', 'info legend'),
+          grades = [30000, 35000, 40000, 50000, 60000, 70000],
+          labels = [];
+
+          for (var i = 0; i < grades.length; i++) {
+            div.innerHTML += '<i style="background:' + getColorMedHaus(grades[i] + 1) +  '"></i> '
+            + grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '</br>' : '+');
+          }
+
+          return div;
+        }
+
+        legend.addTo(mymap);
+
         //for the geoJSON, add the JSON, the new stying, and the listeners to the layer
         geojson = L.geoJSON(vancNeighborhoods, {style: style, onEachFeature: onEachFeature}).addTo(mymap);
       });
@@ -163,21 +189,34 @@
                            'white';
         }
 
+        function handleMouseOver(d) {
+          d3.select(this).attr("r", radius * 4);
+        }
+
+        function handleMouseOut(d) {
+          d3.select(this).attr("r", radius);
+        }
+
+
         var feature = g.selectAll("circle")
             .data(data)
             .enter()
             .append("circle")
-            .attr("r", 7)
+            .attr("r", radius)
             .style("fill", function(d) {
               var value = parseFloat(d.MEASLES);
 
               if (value) {
-                console.log(value);
                 return getColorVacc(value);
               } else {
                 return "white";
               }
             })
+            .on("mouseover", handleMouseOver)
+            .on("mouseout", function(d) {
+              d3.select(this).attr("r", radius);
+            });
+
 
         function update() {
             feature.attr("cx", function (d) {
