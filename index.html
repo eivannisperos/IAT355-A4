@@ -172,10 +172,15 @@
       var svg =  d3.select("#mapid").select("svg");
       var g = svg.select("g").attr("class", "leaflet-zoom-hide");
 
+
+
       d3.csv("data/vanc_full_data_elem.csv", function(error, data) {
         data.forEach(function (d) {
             d.LatLng = new L.LatLng(d.LATITUDE, d.LONGITUDE);
         })
+
+        //popUp to show school details
+        var popUp;
 
         function getColorVacc(d) {
           return d > 90  ? '#fef0d9' :
@@ -189,12 +194,30 @@
 
         function handleMouseOver(d) {
           var name = d.schoolName;
-          console.log(d.schoolName);
+
+          var lat = parseFloat(d.LATITUDE);
+          var long = parseFloat(d.LONGITUDE);
+
+          // console.log(d.schoolName);
+          // console.log(parseFloat(d.LATITUDE));
+          // console.log(parseFloat(d.LONGITUDE));
+
+          popUp = L.popup()
+            .setLatLng([lat, long])
+            .setContent(d.schoolName)
+            .openOn(mymap);
+
+
           d3.select(this).attr("r", radius * 4);
+
         }
+
 
         function handleMouseOut(d) {
           d3.select(this).attr("r", radius);
+
+          popUp = L.popup().closePopup();
+
         }
 
         var feature = g.selectAll("circle")
@@ -213,7 +236,6 @@
             })
             .on("mouseover", handleMouseOver)
             .on("mouseout", handleMouseOut);
-
 
         function update() {
             feature.attr("cx", function (d) {
