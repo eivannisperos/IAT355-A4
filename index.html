@@ -7,6 +7,9 @@
       integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ=="
       crossorigin=""/>
 
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/tipsy.js"></script>
+
     <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"
       integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw=="
       crossorigin=""></script>
@@ -38,6 +41,9 @@
 
       //legend
       var legend = L.control({position: 'bottomright'});
+
+      //school identifier
+      var schoolLabel = L.control({position: 'bottomleft'});
 
       L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
           attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -97,6 +103,15 @@
       }
 
       info.addTo(mymap);
+
+      //school labels
+      schoolLabel.onAdd = function(mymap) {
+        this._div = L.DomUtil.create('div', 'info'); //create a div with info as a class
+        schoolLabel.update();
+        return this._div;
+      }
+
+      schoolLabel.addTo(mymap);
 
       //handles vancouver chloropleth
       d3.csv("data/med_avg_income_vanc.csv", function(data) {
@@ -175,12 +190,11 @@
 
 
       d3.csv("data/vanc_full_data_elem.csv", function(error, data) {
+        var popUp;
+
         data.forEach(function (d) {
             d.LatLng = new L.LatLng(d.LATITUDE, d.LONGITUDE);
         })
-
-        //popUp to show school details
-        var popUp;
 
         function getColorVacc(d) {
           return d > 90  ? '#fef0d9' :
@@ -192,20 +206,25 @@
                            'white';
         }
 
-        function handleMouseOver(d) {
+
+        //mouse events function when hovering over dots
+        function handleMouseOver(d, i) {
           var name = d.schoolName;
 
           var lat = parseFloat(d.LATITUDE);
           var long = parseFloat(d.LONGITUDE);
 
-          // console.log(d.schoolName);
-          // console.log(parseFloat(d.LATITUDE));
-          // console.log(parseFloat(d.LONGITUDE));
+          console.log(d.schoolName);
+          console.log(parseFloat(d.LATITUDE));
+          console.log(parseFloat(d.LONGITUDE));
 
-          popUp = L.popup()
-            .setLatLng([lat, long])
-            .setContent(d.schoolName)
-            .openOn(mymap);
+          // popUp = L.popup()
+          //   .setLatLng([lat, long])
+          //   .setContent(d.schoolName)
+          //   .openOn(mymap);
+          schoolLabel.update = function(props) {
+            this._div.innerHTML = '<h3>Median Household Income By Neighborhood</h3>' + (props ? '<b>' + name + '</b><br />' : 'Hover over a School');
+          }
 
 
           d3.select(this).attr("r", radius * 4);
@@ -215,9 +234,6 @@
 
         function handleMouseOut(d) {
           d3.select(this).attr("r", radius);
-
-          popUp = L.popup().closePopup();
-
         }
 
         var feature = g.selectAll("circle")
