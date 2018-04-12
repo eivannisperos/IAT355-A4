@@ -1,25 +1,25 @@
-﻿name,avgIncome,medIncome,crime
-Arbutus-Ridge,62675,30929,60
-Downtown,63251,41858,1351
-Dunbar-Southlands,78117,40463,91
-Fairview,61627,46940,208
-Grandview-Woodland,42896,32438,257
-Hastings-Sunrise,38258,27255,170
-Kensington-Cedar Cottage,38411,28356,227
-Kerrisdale,77248,35064,70
-Killarney,39013,29259,88
-Kitsilano,63092,44084,190
-Marpole,39020,26787,121
-Mount Pleasant,54260,42362,300
-Oakridge,46515,26695,48
-Renfrew-Collingwood,33360,25476,270
-Riley Park,53060,37327,101
-Shaughnessy,118668,44392,48
-South Cambie,65459,42094,39
-Strathcona,31534,17631,394
-Sunset,34212,25498,137
-Victoria-Fraserview,34298,24758,106
-West End,47253,36425,360
-West Point Grey,82042,40304,82
+﻿name,avgIncome,medIncome,crime,ethnicity
+Arbutus-Ridge,62675,30929,60,china
+Downtown,63251,41858,1351,nEuropean
+Dunbar-Southlands,78117,40463,91,china
+Fairview,61627,46940,208,nEuropean
+Grandview-Woodland,42896,32438,257,china
+Hastings-Sunrise,38258,27255,170,china
+Kensington-Cedar Cottage,38411,28356,227,philippines
+Kerrisdale,77248,35064,70,china
+Killarney,39013,29259,88,china
+Kitsilano,63092,44084,190,nEuropean
+Marpole,39020,26787,121,china
+Mount Pleasant,54260,42362,300,nEuropean
+Oakridge,46515,26695,48,china
+Renfrew-Collingwood,33360,25476,270,philippines
+Riley Park,53060,37327,101,china
+Shaughnessy,118668,44392,48,china
+South Cambie,65459,42094,39,china
+Strathcona,31534,17631,394,iranian
+Sunset,34212,25498,137,china
+Victoria-Fraserview,34298,24758,106,indian
+West End,47253,36425,360,nEuropean
+West Point Grey,82042,40304,82,nEuropean
 Vancouver CSD,50317,32896
 Vancouver CMA,46821,32575
