@@ -42,6 +42,7 @@
       //legend
       var legend = L.control({position: 'bottomright'});
 
+
       L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
           attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
           maxZoom: 18,
@@ -101,21 +102,16 @@
 
       info.addTo(mymap);
 
-      //school labels
-      schoolLabel.onAdd = function(mymap) {
-        this._div = L.DomUtil.create('div', 'info'); //create a div with info as a class
-        schoolLabel.update();
-        return this._div;
-      }
-
-      schoolLabel.addTo(mymap);
-
       //handles vancouver chloropleth
       d3.csv("data/med_avg_income_vanc.csv", function(data) {
 
         for (var i = 0; i < data.length; i++) {
           //take name of neighborhood in JSON
           var vancNeighName = data[i].name;
+
+          //crime rate
+          var crimeRate = parseFloat(data[i].crime);
+
           //avg income in CSV
           var vancNeighAvgValue = parseFloat(data[i].avgIncome);
 
@@ -125,7 +121,7 @@
 
             //place it inside
             if (vancNeighName == jsonVancName) {
-              vancNeighborhoods.features[j].properties.value = vancNeighAvgValue;
+              vancNeighborhoods.features[j].properties.value = crimeRate;
               break;
             }
           }
@@ -143,9 +139,34 @@
                            'white';
         }
 
+        //crimerate color scheme
+        function getIncomeColor(d) {
+          return d > 400  ? '#800026' :
+                 d > 350  ? '#bd0026' :
+                 d > 300  ? '#e31a1c' :
+                 d > 250  ? '#fc4e2a' :
+                 d > 200  ? '#fd8d3c' :
+                 d > 150  ? '#feb24c' :
+                 d > 100  ? '#fed976' :
+                 d > 50  ? '#ffeda0' :
+                 d > 0  ? '#ffffcc' :
+                           'white';
+        }
+
+        // function style(vNeigh) {
+        //   return {
+        //       fillColor: getColorMedHaus(vNeigh.properties.value),
+        //       weight: 2,
+        //       opacity: 1,
+        //       color: 'white',
+        //       dashArray: '3',
+        //       fillOpacity: 0.7
+        //   };
+        // }
+
         function style(vNeigh) {
           return {
-              fillColor: getColorMedHaus(vNeigh.properties.value),
+              fillColor: getIncomeColor(vNeigh.properties.value),
               weight: 2,
               opacity: 1,
               color: 'white',
@@ -189,17 +210,19 @@
       d3.csv("data/vanc_full_data_elem.csv", function(error, data) {
         var popUp;
 
+        var schoolLabel = L.control({position: 'bottomleft'});
+
         data.forEach(function (d) {
             d.LatLng = new L.LatLng(d.LATITUDE, d.LONGITUDE);
         })
 
         function getColorVacc(d) {
-          return d > 90  ? '#fef0d9' :
-                 d > 85  ? '#fdd49e' :
-                 d > 80 ? '#fdbb84' :
-                 d > 70  ? '#fc8d59' :
-                 d > 60  ? '#e34a33' :
-                 d > 50  ? '#b30000' :
+          return d > 90  ? '#006d2c' :
+                 d > 85  ? '#2ca25f' :
+                 d > 80 ? '#66c2a4' :
+                 d > 70  ? '#fd8d3c' :
+                 d > 60  ? '#f03b20' :
+                 d > 50  ? '#bd0026' :
                            'white';
         }
 
@@ -219,10 +242,18 @@
           //   .setLatLng([lat, long])
           //   .setContent(d.schoolName)
           //   .openOn(mymap);
-          schoolLabel.update = function(props) {
-            this._div.innerHTML = '<h3>Median Household Income By Neighborhood</h3>' + (props ? '<b>' + name + '</b><br />' : 'Hover over a School');
+
+          schoolLabel.onAdd = function(mymap) {
+            this._div = L.DomUtil.create('div', 'info school'); //create a div with info as a class
+            this.update();
+            return this._div;
           }
 
+          schoolLabel.update = function(props) {
+            this._div.innerHTML = '<h3>School</h3>' + (name ? '<b>' + name + '</b><br />' : 'Hover over a School');
+          }
+
+          schoolLabel.addTo(mymap);
 
           d3.select(this).attr("r", radius * 4);
 
@@ -238,6 +269,8 @@
             .enter()
             .append("circle")
             .attr("r", radius)
+            .attr("stroke-width", .5)
+            .attr("stroke", 'white')
             .style("fill", function(d) {
               var value = parseFloat(d.MEASLES);
 
