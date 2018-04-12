@@ -18,25 +18,30 @@
   </head>
 
   <body>
-    <fieldset>
-      <div>
-        <label>Average Income:</label><input type="radio" name="overlayCtrl" id="averageIncome">
-        <label>Crime Rate</label><input type="radio" name="overlayCtrl" id="crimeNumber">
-      </div>
+    <div>
+      <fieldset>
+        <div>
+          <label>Average Income:</label><input type="radio" name="overlayCtrl" id="averageIncome">
+          <label>Crime Rate</label><input type="radio" name="overlayCtrl" id="crimeNumber">
+        </div>
 
-      <div>
-        <label>Dominant Ethnic Background</label><input type="radio" name="overlayCtrl" id="ethnicbg">
-      </div>
+        <div>
+          <label>Dominant Ethnic Background</label><input type="radio" name="overlayCtrl" id="ethnicbg">
+        </div>
 
-      <div>
-        <label>Independant (Private) Schools</label><input type="checkbox" name="schoolCtrl1" id="private" >
-        <label>Public Schools</label><input type="checkbox" name="schoolCtrl2" id="public" >
-      <div>
+        <div>
+          <label>Independant (Private) Schools</label><input type="checkbox" name="schoolCtrl1" id="private" >
+          <label>Public Schools</label><input type="checkbox" name="schoolCtrl2" id="public" >
+        <div>
 
-    </fieldset>
+      </fieldset>
+
+      <div id="mapid"></div>
+    </div>
+
 
     <!-- map goes here -->
-    <div id="mapid"></div>
+
 
     <script type="text/javascript" src="data/vancouver.js"></script>
     <script type="text/javascript" src="data/surrey.js"></script>
@@ -44,7 +49,7 @@
     <script type="text/javascript" src="js/d3.js"></script>
     <script>
       //radius of circle
-      var radius = 7;
+      var radius = 10;
       var colorVacc = d3.scaleQuantize()
         .range(['#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02','#a6761d','#666666']);
 
@@ -144,15 +149,15 @@
 
         //crimerate color scheme
         function getCrimeColor(d) {
-          return d > 400  ? '#800026' :
-                 d > 350  ? '#bd0026' :
-                 d > 300  ? '#e31a1c' :
-                 d > 250  ? '#fc4e2a' :
-                 d > 200  ? '#fd8d3c' :
-                 d > 150  ? '#feb24c' :
-                 d > 100  ? '#fed976' :
-                 d > 50  ? '#ffeda0' :
-                 d > 0  ? '#ffffcc' :
+          return d > 400  ? '#4d004b' :
+                 d > 350  ? '#810f7c' :
+                 d > 300  ? '#88419d' :
+                 d > 250  ? '#8c6bb1' :
+                 d > 200  ? '#8c96c6' :
+                 d > 150  ? '#9ebcda' :
+                 d > 100  ? '#bfd3e6' :
+                 d > 50  ? '#e0ecf4' :
+                 d > 0  ? '#f7fcfd' :
                            'white';
         }
 
@@ -178,7 +183,7 @@
               opacity: 1,
               color: 'white',
               dashArray: '3',
-              fillOpacity: 0.5
+              fillOpacity: 0.7
           };
         }
 
@@ -390,12 +395,13 @@
         })
 
         function getColorVacc(d) {
-          return d > 90  ? '#006d2c' :
-                 d > 85  ? '#2ca25f' :
-                 d > 80 ? '#66c2a4' :
-                 d > 70  ? '#fd8d3c' :
-                 d > 60  ? '#f03b20' :
-                 d > 50  ? '#bd0026' :
+          return d > 100  ? '#006d2c' :
+                 d > 95  ? '#2ca25f' :
+                 d > 90 ? '#66c2a4' :
+                 d > 80  ? '#fee8c8' :
+                 d > 70  ? '#fdbb84' :
+                 d > 60  ? '#e34a33' :
+                 d > 50  ? '#7f0000' :
                            'white';
         }
 
@@ -425,7 +431,7 @@
             //each div has a class with info and legend
 
             var div = L.DomUtil.create('div', 'info legend'),
-            grades = [50, 60, 70, 80, 85, 90],
+            grades = [50, 60, 70, 80, 90, 95, 100],
             labels = [];
 
             for (var i = 0; i < grades.length; i++) {
@@ -469,7 +475,7 @@
             .enter()
             .append("circle")
             .attr("r", radius)
-            .attr("stroke-width", 0)
+            .attr("stroke-width", 2)
             .attr("stroke", 'white')
             .style("fill", function(d) {
               var value = parseFloat(d.MEASLES);
@@ -482,24 +488,36 @@
             })
             .style("display", function(d) {
               var type = d.SCHOOL_CATEGORY;
-              // if (type ==  "Public School") {
-              //   return 'none';
-              // }
-
-              if (pub.checked == true) {
-                if (type == "Public School") {
-                  return 'inline';
-                } else {
-                  return 'none';
-                }
-              } else if (prv.checked == true) {
-                if (type == "Independent School") {
-                  return 'inline';
-                } else {
-                  return 'none';
-                }
+              if (pub.checked == true && prv.checked == true) {
+                return 'inline';
               } else if (pub.checked == false && prv.checked == false) {
                 return 'none';
+              } else if (pub.checked == true) {
+                if (type == 'Public School') {
+                  return 'inline'
+                }
+
+                if (prv.checked == true) {
+                  if (type == 'Independent School') {
+                    return 'inline';
+                  }
+                } else {
+                  return 'none';
+                }
+
+              } else if (prv.checked == true) {
+
+                if (type == 'Independent School') {
+                  return 'inline'
+                }
+
+                if (pub.checked == true) {
+                  if (type == 'Public School') {
+                    return 'inline';
+                  }
+                } else {
+                  return 'none';
+                }
               }
             })
             .on("mouseover", handleMouseOver)
