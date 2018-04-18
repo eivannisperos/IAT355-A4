@@ -2,16 +2,20 @@ body {
   margin: 0;
 }
 
+fieldset {
+  height: 7vh;
+  padding: 0;
+  margin: 0;
+}
+
 #mapid {
-  height: 100vh;
+  height: 92vh;
 }
 
 g {
   cursor: pointer;
   pointer-events: all;
 }
-
-
 
 .info {
     padding: 6px 8px;
@@ -38,7 +42,16 @@ g {
     margin-right: 8px;
     opacity: 0.7;
 }
+/* bar chart properties */
 
-.school {
-  text-align: left;
+.bar {
+  fill: steelblue;
+}
+
+.bar:hover {
+  fill:brown;
+}
+
+.axis--x path {
+  display: none;
 }
