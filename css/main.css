@@ -51,7 +51,3 @@ g {
 .bar:hover {
   fill:brown;
 }
-
-.axis--x path {
-  display: none;
-}

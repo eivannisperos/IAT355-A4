@@ -85,6 +85,8 @@
         //updates the info control with actual info
         //in this case, this is median household income
         info.update(layer.feature.properties);
+
+        // console.log(targetNeighborhood);
       }
 
       //resets default style
@@ -106,6 +108,9 @@
           click: zoomToFeature
         });
       }
+
+      //bar graph/map communication
+      var targetNeighborhood;
 
       //handles vancouver chloropleth
       d3.csv("data/med_avg_income_vanc.csv", function(data) {
@@ -172,11 +177,6 @@
                  'white';
         }
 
-        // function getEthnicBG(d) {
-        //   if (d == 'nEuropean') {
-        //     return '#1b9e77';
-        //   }
-        // }
 
         function styleCrime(vNeigh) {
           return {
@@ -220,8 +220,12 @@
         }
 
         //puts the information inside the div
+        //this is where the neighborhood is passed down
         info.update = function(props) {
           this._div.innerHTML = '<h3>Average Income of Neighborhoods</h3>' + (props ? '<b>' + props.name + '</b><br />' + "$" + props.value : 'Hover over a Neighborhood');
+          if (props) {
+            targetNeighborhood = props.name;
+          }
         }
 
         //add all elements to map
@@ -415,10 +419,6 @@
           var lat = parseFloat(d.LATITUDE);
           var long = parseFloat(d.LONGITUDE);
 
-          console.log(d.schoolName);
-          console.log(parseFloat(d.LATITUDE));
-          console.log(parseFloat(d.LONGITUDE));
-
           schoolLabel.onAdd = function(mymap) {
             this._div = L.DomUtil.create('div', 'info school'); //create a div with info as a class
             this.update();
@@ -544,49 +544,58 @@
 
 
       // bar graph
-      var bargraph = d3.select("svg"),
-          margin = {
-            top: 20, right: 20, bottom: 30, left: 40
-          },
-          width = +svg.attr("width") - margin.left - margin.right,
-          height = +svg.attr("height") - margin.top - margin.bottom;
+      //set dimensions and margins of the graph
+      var margin = {top:20, right: 20, bottom: 30, left: 40},
+          width = 960 - margin.left - margin.right,
+          height = 500 - margin.top - margin.bottom;
 
-      var x = d3.scaleBand().rangeRound([0, width]).padding(0.1),
-          y = d3.scaleLinear().rangeRound([height, 0]);
+      //padding is space between the bars
+      var x = d3.scaleBand()
+              .range([0, width])
+              .padding(.1);
+      var y = d3.scaleLinear()
+              .range([height, 0]);
 
-      var bargraphG = bargraph.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      var bargraph = d3.select("body").append("svg")
+                     .attr("width", "50%")
+                     .attr("height", height + margin.top + margin.bottom)
+                     .append("g")
+                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      d3.tsv("test.tsv", function(d) {
-        d.frequency = +d.frequency;
-        return d;
-      }, function(error, data) {
-          x.domain(data.map(function(d) { return d.letter; }));
-          y.domain([0, d3.max(data, function(d) { return d.frequency; })]);
+      d3.csv("data/data-cities/vanc2011.csv", function(error, data) {
+        data.forEach(function (d) {
+          d.sales = +d.sales;
+        });
 
-          bargraphG.append("g")
-              .attr("class", "axis axis--x")
-              .attr("transform", "translate(0," + height + ")")
-              .call(d3.axisBottom(x));
 
-          bargraphG.append("g")
-              .attr("class", "axis axis--y")
-              .call(d3.axisLeft(y).ticks(10, "%"))
-            .append("text")
-              .attr("transform", "rotate(-90)")
-              .attr("y", 6)
-              .attr("dy", "0.71em")
-              .attr("text-anchor", "end")
-              .text("Frequency");
+        // Scale the range of the data in the domains
+        x.domain(data.map(function(d) { return d.salesperson; }));
+        y.domain([0, d3.max(data, function(d) { return d.sales; })]);
 
-          bargraphG.selectAll(".bar")
+
+        //repalce the return functions with a global variable - taking where the pointer is on the map and placing the value here
+        bargraph.selectAll(".bar")
             .data(data)
             .enter().append("rect")
-              .attr("class", "bar")
-              .attr("x", function(d) { return x(d.letter); })
-              .attr("y", function(d) { return y(d.frequency); })
-              .attr("width", x.bandwidth())
-              .attr("height", function(d) { return height - y(d.frequency); });
+            .attr("class", "bar")
+            .attr("x", function(d) {
+              console.log(d.Downtown);
+              return x(d.Downtown);
+            })
+            .attr("width", x.bandwidth())
+            .attr("y", function(d) { return y("d." + "20 to 24 years "); })
+            .attr("height", function(d) { return height - y(d.sales); });
+
+        // add the x Axis
+        bargraph.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+        // add the y Axis
+        bargraph.append("g")
+            .call(d3.axisLeft(y));
       });
+
     </script>
 
   </body>
