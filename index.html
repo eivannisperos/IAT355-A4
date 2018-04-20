@@ -18,31 +18,39 @@
   </head>
 
   <body>
-    <section id="map-section">
-      <fieldset>
-        <div>
-          <label>Average Income:</label><input type="radio" name="overlayCtrl" id="averageIncome">
-          <label>Crime Rate</label><input type="radio" name="overlayCtrl" id="crimeNumber">
+    <div class="container-horz">
+      <section id="map-section">
+        <fieldset>
+          <div>
+            <label>Average Income:</label><input type="radio" name="overlayCtrl" id="averageIncome">
+            <label>Crime Rate</label><input type="radio" name="overlayCtrl" id="crimeNumber">
+          </div>
+
+          <div>
+            <label>Dominant Ethnic Background</label><input type="radio" name="overlayCtrl" id="ethnicbg">
+          </div>
+
+          <div>
+            <label>Independant (Private) Schools</label><input type="checkbox" name="schoolCtrl1" id="private" >
+            <label>Public Schools</label><input type="checkbox" name="schoolCtrl2" id="public" >
+          <div>
+
+        </fieldset>
+        <!-- map goes here -->
+        <div id="mapid"></div>
+      </section>
+
+      <section class="container-vert">
+        <div class="bargraph-sec" id="bargraph-section"></div>
+        <div class="bargraph-sec" id="drop-bargraph-1">
+          <select id="select1"></select>
         </div>
-
-        <div>
-          <label>Dominant Ethnic Background</label><input type="radio" name="overlayCtrl" id="ethnicbg">
+        <div class="bargraph-sec" id="drop-bargraph-2">
+          <select id="select2"></select>
         </div>
+      </section>
+    </div>
 
-        <div>
-          <label>Independant (Private) Schools</label><input type="checkbox" name="schoolCtrl1" id="private" >
-          <label>Public Schools</label><input type="checkbox" name="schoolCtrl2" id="public" >
-        <div>
-
-      </fieldset>
-
-      <div id="mapid"></div>
-    </section>
-
-     <div id="drop"></div>
-
-
-    <!-- map goes here -->
 
 
     <script type="text/javascript" src="data/vancouver.js"></script>
@@ -71,7 +79,52 @@
           accessToken: 'pk.eyJ1IjoiZWl2YW5uaXNwZXJvcyIsImEiOiJjamV4YTdnM2ExMHVoMndwY2N6ZGk2M3BsIn0.Ga6sMTa39-B_DchNNMKBwA'
       }).addTo(mymap);
 
+      var containerBGraphW = $("#bargraph-section").width();
+      var containerBGraphH = $("#bargraph-section").height();
+
+      // bar graph
+      //set dimensions and margins of the graph
+       var margin = {top:20, right: 20, bottom: 30, left: 40},
+           width = containerBGraphW - margin.left - margin.right,
+           height = containerBGraphH - margin.top - margin.bottom;
+
+      //padding is space between the bars
+       var x = d3.scaleBand()
+              .range([0, width])
+              .padding(.2);
+       var y = d3.scaleLinear()
+              .range([height, 0]);
+
+
+      //bar graph/map communication
+      var targetNeighborhood;
+
+      var bargraph = d3.select("#bargraph-section").append("svg")
+                     .attr("width", width + margin.left + margin.right)
+                     .attr("height", height + margin.top + margin.bottom)
+                     .append("g")
+                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      var selectOption = document.getElementById("select1");
+      var selectOptionTwo = document.getElementById("select2");
+
+      //sorts data to top 7 speakers
+      //contrals the amount of data set shown
+      function getTopEthnic(arrayData){  //sorting to top 3 function
+          arrayData.sort(function(a, b) {
+              return parseFloat(b.speakers) - parseFloat(a.speakers);
+          });
+         return arrayData.slice(0, 7);
+      }
+
+      function textToDiv(phrase, div) {
+        console.log("text to div activated");
+        var div = document.getElementById(div);
+        div.innerHTML += phrase;
+      }
+
       //reset highlight feature
+      //controls backgraph 1 when highlighting certain aspects of the map (neighborhoods)
       function highlightFeature(e) {
         var layer = e.target;
 
@@ -86,7 +139,57 @@
         //in this case, this is median household income
         info.update(layer.feature.properties);
 
-        // console.log(targetNeighborhood);
+        targetNeighborhood = layer.feature.properties.name;
+
+        if (targetNeighborhood) {
+          //everything needs to update down here when
+          d3.csv("data/data-cities/"+ targetNeighborhood+ ".csv", function(error, data) {
+              if (error) {
+                console.log("Data not available");
+                return;
+              }
+              data.forEach(function (d) {
+                d.speakers = +d.speakers;
+              });
+
+              data = getTopEthnic(data);
+
+              // Scale the range of the data in the domains
+              x.domain(data.map(function(d) { return d.language; }));
+              y.domain([0, d3.max(data, function(d) { return d.speakers; })]);
+
+              //remove the existing bargraph first
+              bargraph.selectAll("*").remove();
+
+              //add a new bargraph based on incoming data
+              bargraph.selectAll(".bar")
+                  .data(data)
+                  .enter().append("rect")
+                  .attr("class", "bar")
+                  .attr("x", function(d) { return x(d.language); })
+                  .attr("width", x.bandwidth())
+                  .attr("y", function(d) { return y(d.speakers); })
+                  .attr("height", function(d) { return height - y(d.speakers); });
+
+              bargraph.append("text")
+                      .attr("x", (width / 2))
+                      .attr("y", 10 - (margin.top / 2))
+                      .attr("text-anchor", "middle")
+                      .style("font-size", "16px")
+                      .style("text-decoration", "underline")
+                      .text("Ethnicity: " + targetNeighborhood);
+
+              // add the x Axis
+              bargraph.append("g")
+                        .attr("transform", "translate(0," + height + ")")
+                        .call(d3.axisBottom(x));
+
+              // add the y Axis
+              bargraph.append("g")
+                        .call(d3.axisLeft(y));
+            });
+        }
+
       }
 
       //resets default style
@@ -109,15 +212,21 @@
         });
       }
 
-      //bar graph/map communication
-      var targetNeighborhood;
-
       //handles vancouver chloropleth
       d3.csv("data/med_avg_income_vanc.csv", function(data) {
 
         for (var i = 0; i < data.length; i++) {
           //take name of neighborhood in JSON
           var vancNeighName = data[i].name;
+
+          var optionOne = document.createElement("option");
+          var optionTwo = document.createElement("option");
+
+          optionOne.text = data[i].name;
+          optionTwo.text = data[i].name;
+
+          selectOption.add(optionOne);
+          selectOptionTwo.add(optionTwo);
 
           //crime rate
           var crimeRate = parseFloat(data[i].crime);
@@ -131,7 +240,6 @@
           //find corresponding vnacouver neighborhood inside the GEOJSON
           for (var j = 0; j < vancNeighborhoods.features.length; j++) {
             var jsonVancName = vancNeighborhoods.features[j].properties.name;
-
             //place it inside
             if (vancNeighName == jsonVancName) {
               vancNeighborhoods.features[j].properties.value = vancNeighAvgValue;
@@ -221,12 +329,158 @@
 
         //puts the information inside the div
         //this is where the neighborhood is passed down
+        //also try updating the bar graph here
         info.update = function(props) {
-          this._div.innerHTML = '<h3>Average Income of Neighborhoods</h3>' + (props ? '<b>' + props.name + '</b><br />' + "$" + props.value : 'Hover over a Neighborhood');
-          if (props) {
-            targetNeighborhood = props.name;
-          }
+            this._div.innerHTML = '<h3>Average Income of Neighborhoods</h3>' + (props ? '<b>' + props.name + '</b><br />' + "$" + props.value : 'Hover over a Neighborhood');
+            // if (props) {
+            //   targetNeighborhood = props.name;
+            // }
+
         }
+
+        //data that goes into first graph
+        var selectDataOne;
+        var selectDataTwo;
+
+        //bargraph 1
+        var dropBargraphOne = d3.select("#drop-bargraph-1").append("svg")
+                      .attr("width", width + margin.left + margin.right)
+                      .attr("height", height + margin.top + margin.bottom)
+                      .append("g")
+                      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        var dropBargraphTwo = d3.select("#drop-bargraph-2").append("svg")
+                      .attr("width", width + margin.left + margin.right)
+                      .attr("height", height + margin.top + margin.bottom)
+                      .append("g")
+                      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      //when values of drop down changes...
+        $(selectOption).click(function(event) {
+          selectDataOne = $(selectOption).val();
+
+          d3.csv("data/data-cities/"+ selectDataOne +".csv", function(error, data) {
+            if (error) {
+              console.log("Data not available");
+              return;
+            }
+                  data.forEach(function (d) {
+                    d.speakers = +d.speakers;
+                  });
+
+                  data = getTopEthnic(data);
+
+                    // Scale the range of the data in the domains
+                  x.domain(data.map(function(d) { return d.language; }));
+                  y.domain([0, d3.max(data, function(d) { return d.speakers; })]);
+
+
+                  //remove the existing bargraph first
+                  dropBargraphOne.selectAll("*").remove();
+
+                    //repalce the return functions with a global variable - taking where the pointer is on the map and placing the value here
+                  dropBargraphOne.selectAll(".bar")
+                      .data(data)
+                      .enter().append("rect")
+                      .attr("class", "bar")
+                      .attr("x", function(d) {
+                        return x(d.language);
+                      })
+                      .attr("width", x.bandwidth())
+                      .attr("y", function(d) { return y(d.speakers); })
+                      .attr("height", function(d) { return height - y(d.speakers); });
+
+                    // add the x Axis
+                  dropBargraphOne.append("g")
+                      .attr("transform", "translate(0," + height + ")")
+                      .call(d3.axisBottom(x));
+
+                  // add the y Axis
+                  dropBargraphOne.append("g")
+                      .call(d3.axisLeft(y));
+                });
+        });
+
+        $(selectOptionTwo).click(function(event) {
+          selectDataTwo = $(selectOptionTwo).val();
+
+          d3.csv("data/data-cities/"+ selectDataTwo +".csv", function(error, data) {
+              if (error) {
+                console.log("Data not available");
+                return;
+              }
+                  data.forEach(function (d) {
+                    d.speakers = +d.speakers;
+                  });
+
+                  data = getTopEthnic(data);
+
+                    // Scale the range of the data in the domains
+                  x.domain(data.map(function(d) { return d.language; }));
+                  y.domain([0, d3.max(data, function(d) { return d.speakers; })]);
+
+
+                  //remove the existing bargraph first
+                  dropBargraphTwo.selectAll("*").remove();
+
+                    //repalce the return functions with a global variable - taking where the pointer is on the map and placing the value here
+                  dropBargraphTwo.selectAll(".bar")
+                      .data(data)
+                      .enter().append("rect")
+                      .attr("class", "bar")
+                      .attr("x", function(d) {
+                        return x(d.language);
+                      })
+                      .attr("width", x.bandwidth())
+                      .attr("y", function(d) { return y(d.speakers); })
+                      .attr("height", function(d) { return height - y(d.speakers); });
+
+                    // add the x Axis
+                  dropBargraphTwo.append("g")
+                      .attr("transform", "translate(0," + height + ")")
+                      .call(d3.axisBottom(x));
+
+                  // add the y Axis
+                  dropBargraphTwo.append("g")
+                      .call(d3.axisLeft(y));
+                });
+        });
+
+
+
+        //everything needs to update down here when
+        d3.csv("data/data-cities/Arbutus-Ridge.csv", function(error, data) {
+                data.forEach(function (d) {
+                  d.speakers = +d.speakers;
+                });
+
+                data = getTopEthnic(data);
+
+                  // Scale the range of the data in the domains
+                x.domain(data.map(function(d) { return d.language; }));
+                y.domain([0, d3.max(data, function(d) { return d.speakers; })]);
+
+                  //repalce the return functions with a global variable - taking where the pointer is on the map and placing the value here
+                dropBargraphOne.selectAll(".bar")
+                    .data(data)
+                    .enter().append("rect")
+                    .attr("class", "bar")
+                    .attr("x", function(d) {
+                      return x(d.language);
+                    })
+                    .attr("width", x.bandwidth())
+                    .attr("y", function(d) { return y(d.speakers); })
+                    .attr("height", function(d) { return height - y(d.speakers); });
+
+                  // add the x Axis
+                dropBargraphOne.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x));
+
+                // add the y Axis
+                dropBargraphOne.append("g")
+                    .call(d3.axisLeft(y));
+              });
 
         //add all elements to map
         info.addTo(mymap);
@@ -543,58 +797,6 @@
       });
 
 
-      // bar graph
-      //set dimensions and margins of the graph
-      var margin = {top:20, right: 20, bottom: 30, left: 40},
-          width = 960 - margin.left - margin.right,
-          height = 500 - margin.top - margin.bottom;
-
-      //padding is space between the bars
-      var x = d3.scaleBand()
-              .range([0, width])
-              .padding(.1);
-      var y = d3.scaleLinear()
-              .range([height, 0]);
-
-      var bargraph = d3.select("body").append("svg")
-                     .attr("width", "50%")
-                     .attr("height", height + margin.top + margin.bottom)
-                     .append("g")
-                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-      d3.csv("data/data-cities/vanc2011.csv", function(error, data) {
-        data.forEach(function (d) {
-          d.sales = +d.sales;
-        });
-
-
-        // Scale the range of the data in the domains
-        x.domain(data.map(function(d) { return d.salesperson; }));
-        y.domain([0, d3.max(data, function(d) { return d.sales; })]);
-
-
-        //repalce the return functions with a global variable - taking where the pointer is on the map and placing the value here
-        bargraph.selectAll(".bar")
-            .data(data)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("x", function(d) {
-              console.log(d.Downtown);
-              return x(d.Downtown);
-            })
-            .attr("width", x.bandwidth())
-            .attr("y", function(d) { return y("d." + "20 to 24 years "); })
-            .attr("height", function(d) { return height - y(d.sales); });
-
-        // add the x Axis
-        bargraph.append("g")
-            .attr("transform", "translate(0," + height + ")")
-            .call(d3.axisBottom(x));
-
-        // add the y Axis
-        bargraph.append("g")
-            .call(d3.axisLeft(y));
-      });
 
     </script>
 
